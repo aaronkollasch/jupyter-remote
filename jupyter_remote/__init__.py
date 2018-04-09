@@ -17,14 +17,14 @@ from .pysectools import (
     PinentryClosedException,
     PinentryErrorException
 )
-from .jupyter_o2 import (
+from .jupyter_remote import (
     main,
-    JupyterO2,
+    JupyterRemote,
     CustomSSH,
     FilteredOut
 )
 from .config_manager import (
-    JO2_DEFAULTS,
+    JRMT_DEFAULTS,
     CFG_FILENAME,
     CFG_DIR,
     CFG_SEARCH_LOCATIONS,

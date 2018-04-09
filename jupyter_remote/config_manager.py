@@ -7,13 +7,10 @@ except ImportError:
     from configparser import ConfigParser
 import argparse
 
-DNS_SERVER_GROUPS = [  # dns servers that have entries for loginXX.o2.rc.hms.harvard.edu
-    ["134.174.17.6", "134.174.141.2"],  # HMS nameservers
-    ["128.103.1.1", "128.103.201.100", "128.103.200.101"],  # HU nameservers
-]
+DNS_SERVER_GROUPS = []
 # test that you can access the login nodes (on macs) with nslookup login01.o2.rc.hms.harvard.edu <DNS>
 
-JO2_DEFAULTS = {
+JRMT_DEFAULTS = {
     "DEFAULT_USER": "",
     "DEFAULT_HOST": "o2.hms.harvard.edu",
     "DEFAULT_JP_PORT": 8887,
@@ -34,17 +31,17 @@ JO2_DEFAULTS = {
     "PASSWORD_REQUEST_PATTERN": "[\w-]+@[\w-]+'s password: ",
     "DNS_SERVER_GROUPS": DNS_SERVER_GROUPS,
 }
-JO2_DEFAULTS_STR = {key: str(value) for key, value in JO2_DEFAULTS.items()}
+JRMT_DEFAULTS_STR = {key: str(value) for key, value in JRMT_DEFAULTS.items()}
 
-CFG_FILENAME = "jupyter-o2.cfg"
-CFG_DIR = "jupyter-o2"
+CFG_FILENAME = "jupyter-remote.cfg"
+CFG_DIR = "jupyter-remote"
 
 CFG_SEARCH_LOCATIONS = [                                        # In order of increasing priority:
-    os.path.join("/etc", CFG_DIR, CFG_FILENAME),                # /etc/jupyter-o2/jupyter-o2.cfg
-    os.path.join("/usr/local/etc", CFG_DIR, CFG_FILENAME),      # /usr/local/etc/jupyter-o2/jupyter-o2.cfg
-    os.path.join(sys.prefix, "etc", CFG_DIR, CFG_FILENAME),     # etc/jupyter-o2/jupyter-o2.cfg
-    os.path.join(os.path.expanduser("~"), "." + CFG_FILENAME),  # ~/.jupyter-o2.cfg
-    CFG_FILENAME,                                               # ./jupyter-o2.cfg
+    os.path.join("/etc", CFG_DIR, CFG_FILENAME),                # /etc/jupyter-remote/jupyter-remote.cfg
+    os.path.join("/usr/local/etc", CFG_DIR, CFG_FILENAME),      # /usr/local/etc/jupyter-remote/jupyter-remote.cfg
+    os.path.join(sys.prefix, "etc", CFG_DIR, CFG_FILENAME),     # etc/jupyter-remote/jupyter-remote.cfg
+    os.path.join(os.path.expanduser("~"), "." + CFG_FILENAME),  # ~/.jupyter-remote.cfg
+    CFG_FILENAME,                                               # ./jupyter-remote.cfg
 ]
 
 
@@ -82,30 +79,30 @@ def generate_config_file(config_dir=None):
 
 
 def get_base_arg_parser():
-    parser = argparse.ArgumentParser(description='Launch and connect to a Jupyter session on O2')
+    parser = argparse.ArgumentParser(description='Launch and connect to a Jupyter session on a remote server')
     parser.add_argument("subcommand", type=str, nargs='?', help="the subcommand to launch (optional)")
-    parser.add_argument("-u", "--user", default=JO2_DEFAULTS.get("DEFAULT_USER"), type=str,
-                        help="your O2 username")
-    parser.add_argument("--host", type=str, default=JO2_DEFAULTS.get("DEFAULT_HOST"),
+    parser.add_argument("-u", "--user", default=JRMT_DEFAULTS.get("DEFAULT_USER"), type=str,
+                        help="your remote username")
+    parser.add_argument("--host", type=str, default=JRMT_DEFAULTS.get("DEFAULT_HOST"),
                         help="host to connect to")
     parser.add_argument("-p", "--port", dest="jp_port", metavar="PORT", type=int,
-                        default=JO2_DEFAULTS.get("DEFAULT_JP_PORT"),
+                        default=JRMT_DEFAULTS.get("DEFAULT_JP_PORT"),
                         help="available port on your system")
     parser.add_argument("-t", "--time", dest="jp_time", metavar="TIME", type=str,
-                        default=JO2_DEFAULTS.get("DEFAULT_JP_TIME"),
+                        default=JRMT_DEFAULTS.get("DEFAULT_JP_TIME"),
                         help="maximum time for Jupyter session")
     parser.add_argument("-m", "--mem", dest="jp_mem", metavar="MEM", type=str,
-                        default=JO2_DEFAULTS.get("DEFAULT_JP_MEM"),
+                        default=JRMT_DEFAULTS.get("DEFAULT_JP_MEM"),
                         help="memory to allocate for Jupyter")
     parser.add_argument("-c", "-n", dest="jp_cores", metavar="CORES", type=int,
-                        default=JO2_DEFAULTS.get("DEFAULT_JP_CORES"),
+                        default=JRMT_DEFAULTS.get("DEFAULT_JP_CORES"),
                         help="cores to allocate for Jupyter")
     parser.add_argument("-k", "--keepalive", default=False, action='store_true',
                         help="keep interactive session alive after exiting Jupyter")
     parser.add_argument("--kq", "--keepxquartz", dest="keepxquartz", default=False, action='store_true',
                         help="do not quit XQuartz")
     parser.add_argument("--force-getpass", dest="forcegetpass", action='store_true',
-                        default=JO2_DEFAULTS.get("FORCE_GETPASS"),
+                        default=JRMT_DEFAULTS.get("FORCE_GETPASS"),
                         help="use getpass instead of pinentry for password entry")
     parser.add_argument('--no-browser', dest="no_browser", action='store_true',
                         help="run without opening the browser")
@@ -125,7 +122,7 @@ def get_base_arg_parser():
 
 class ConfigManager(object):
     def __init__(self):
-        self.config = ConfigParser(defaults=JO2_DEFAULTS_STR)
+        self.config = ConfigParser(defaults=JRMT_DEFAULTS_STR)
         self.config.add_section('Defaults')
         self.config.add_section('Settings')
         self.config.add_section('Remote Environment Settings')

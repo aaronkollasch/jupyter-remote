@@ -1,7 +1,7 @@
 from __future__ import print_function
 import unittest
 
-from jupyter_o2.utils import (check_dns, check_port_occupied, print, join_cmd, try_quit_xquartz)
+from jupyter_remote.utils import (check_dns, check_port_occupied, print, join_cmd, try_quit_xquartz)
 
 
 class TestUtils(unittest.TestCase):

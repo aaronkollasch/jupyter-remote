@@ -1,6 +1,6 @@
-===============
-Jupyter-O2 tips
-===============
+===================
+Jupyter-Remote tips
+===================
 
 --------------------------------------------------------------------------------------------------------------------
 Useful Jupyter add-ons
@@ -18,8 +18,8 @@ notebooks in their desired language.
 `bash_kernel <https://pypi.python.org/pypi/bash_kernel>`__
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Since Jupyter-O2 runs Jupyter on an interactive node, bash notebooks
-can be used to document your session on O2, including commands and
+If Jupyter-Remote is run Jupyter on a SLURM interactive node, bash notebooks
+can be used to document your session, including commands and
 outputs, without using SLURM to submit additional jobs.
 
 ``%%bash`` can be used to run a ``bash`` command in kernels that support
@@ -55,21 +55,18 @@ While JupyterLab is currently in beta, it is now
 
 JupyterLab offers a more complete environment than Jupyter Notebook.
 With tabs for notebooks, terminals, consoles, text editors, and an integrated file browser,
-you could run almost anything you need on O2 from a single browser window.
+you could run almost anything you need on the remote server from a single browser window.
 
 --------------------------------------------------------------------------------------------------------------------
 Troubleshooting
 --------------------------------------------------------------------------------------------------------------------
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-jupyter-o2.cfg
+jupyter-remote.cfg
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-``jupyter-o2.cfg`` should be installed upon setup.
-If not, you may also copy ``jupyter_o2/jupyter-o2.cfg`` into any location in ``jupyter-o2 --paths``.
-
-If upgrading from version 0.1.x to 0.2.x, add ``DEFAULT_USER = <user>`` to ``jupyter-o2.cfg``
-under ``[Defaults]``, substituting your O2 username for ``<user>``.
+``jupyter-remote.cfg`` should be installed upon setup.
+If not, you may also copy ``jupyter_remote/jupyter-remote.cfg`` into any location in ``jupyter-remote --paths``.
 
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -102,5 +99,5 @@ in to the server with ``ssh -X`` and check your DISPLAY using
 ``echo $DISPLAY``. There should be a string printed in response.
 
 If ``$DISPLAY`` is empty, try reinstalling
-`XQuartz <https://www.xquartz.org/>`__, or run Jupyter-O2 with the
+`XQuartz <https://www.xquartz.org/>`__, or run Jupyter-Remote with the
 ``-Y`` argument to enable trusted X11 forwarding (less secure).

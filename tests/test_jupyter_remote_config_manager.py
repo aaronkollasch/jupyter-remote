@@ -1,6 +1,6 @@
 import unittest
 
-from jupyter_o2.config_manager import generate_config_file
+from jupyter_remote.config_manager import generate_config_file
 
 
 class TestConfigManager(unittest.TestCase):

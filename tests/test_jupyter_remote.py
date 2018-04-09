@@ -8,13 +8,13 @@ try:
 except ImportError:
     from io import StringIO
 
-from jupyter_o2.jupyter_o2 import JupyterO2
-from test.test_pysectools import MockStringIO
+from jupyter_remote.jupyter_remote import JupyterRemote
+from tests.test_pysectools import MockStringIO
 
 
-class TestJupyterO2(unittest.TestCase):
+class TestJupyterRemote(unittest.TestCase):
     @mock.patch('os.isatty')
     @mock.patch('sys.stdout', new=MockStringIO())
-    def test_jupyter_o2_init(self, isatty):
+    def test_jupyter_remote_init(self, isatty):
         isatty.return_value = True
-        self.assertIsInstance(JupyterO2(), JupyterO2)
+        self.assertIsInstance(JupyterRemote(), JupyterRemote)

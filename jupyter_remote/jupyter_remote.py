@@ -17,7 +17,7 @@ from pexpect import pxssh
 from .version import __version__
 from .utils import (join_cmd, check_dns, try_quit_xquartz, check_port_occupied)
 from .pysectools import (zero, Pinentry, PINENTRY_PATH)
-from .config_manager import (JO2_DEFAULTS, CFG_SEARCH_LOCATIONS, generate_config_file, ConfigManager)
+from .config_manager import (JRMT_DEFAULTS, CFG_SEARCH_LOCATIONS, generate_config_file, ConfigManager)
 
 JP_SITE_PATTERN_FORMAT = "\s(https?://((localhost)|(127\.0\.0\.1)):{port}[\w\-./%?=]+)\s"
 
@@ -152,29 +152,29 @@ class FilteredOut(object):
         return bytestr
 
 
-class JupyterO2Exception(Exception):
+class JupyterRemoteException(Exception):
     pass
 
 
-class JupyterO2Error(JupyterO2Exception):
+class JupyterRemoteError(JupyterRemoteException):
     pass
 
 
-class JupyterO2(object):
+class JupyterRemote(object):
     def __init__(
             self,
             config=None,
-            user=JO2_DEFAULTS.get("DEFAULT_USER"),
-            host=JO2_DEFAULTS.get("DEFAULT_HOST"),
-            subcommand=JO2_DEFAULTS.get("DEFAULT_JP_SUBCOMMAND"),
-            jp_port=JO2_DEFAULTS.get("DEFAULT_JP_PORT"),
-            port_retries=JO2_DEFAULTS.get("PORT_RETRIES"),
-            jp_time=JO2_DEFAULTS.get("DEFAULT_JP_TIME"),
-            jp_mem=JO2_DEFAULTS.get("DEFAULT_JP_MEM"),
-            jp_cores=JO2_DEFAULTS.get("DEFAULT_JP_CORES"),
+            user=JRMT_DEFAULTS.get("DEFAULT_USER"),
+            host=JRMT_DEFAULTS.get("DEFAULT_HOST"),
+            subcommand=JRMT_DEFAULTS.get("DEFAULT_JP_SUBCOMMAND"),
+            jp_port=JRMT_DEFAULTS.get("DEFAULT_JP_PORT"),
+            port_retries=JRMT_DEFAULTS.get("PORT_RETRIES"),
+            jp_time=JRMT_DEFAULTS.get("DEFAULT_JP_TIME"),
+            jp_mem=JRMT_DEFAULTS.get("DEFAULT_JP_MEM"),
+            jp_cores=JRMT_DEFAULTS.get("DEFAULT_JP_CORES"),
             keepalive=False,
             keepxquartz=False,
-            forcegetpass=JO2_DEFAULTS.get("FORCE_GETPASS"),
+            forcegetpass=JRMT_DEFAULTS.get("FORCE_GETPASS"),
             no_browser=False,
             forwardx11trusted=False,
     ):
@@ -206,13 +206,13 @@ class JupyterO2(object):
                 self.logger.debug("Port {0} is not available, error {1}: {2}".format(
                     port, port_occupied.errno, port_occupied.strerror))
             else:
-                self.logger.debug("Port {} is available, using for Jupyter-O2.".format(port))
+                self.logger.debug("Port {} is available, using for Jupyter-Remote.".format(port))
                 self.jp_port = port
                 success = True
                 break
         if not success:
             self.logger.error("Port {0} and the next {1} ports are already occupied.".format(jp_port, port_retries))
-            raise JupyterO2Error("Could not find an available port.")
+            raise JupyterRemoteError("Could not find an available port.")
         self.logger.debug("")
 
         self.run_internal_session = config.getboolean('Remote Environment Settings', 'USE_INTERNAL_INTERACTIVE_SESSION')
@@ -263,17 +263,17 @@ class JupyterO2(object):
             signal(sig, self.term)
 
     def run(self):
-        """Run the standard JupyterO2 sequence"""
+        """Run the standard JupyterRemote sequence"""
         self.ask_for_pin()
         if self.connect() or self.keep_alive:
             self.logger.debug("Starting pexpect interactive mode.")
             self.interact()
 
     def ask_for_pin(self):
-        """Prompt for an O2 password"""
+        """Prompt for a password"""
         self.__pass = self._pinentry.ask(
             prompt="Enter your passphrase: ",
-            description="Connect to O2 server for jupyter {}".format(self.subcommand),
+            description="Connect to remote server for jupyter {}".format(self.subcommand),
             error="No password entered",
             validator=lambda x: x is not None and len(x) > 0
         )
@@ -436,7 +436,7 @@ class JupyterO2(object):
         return cleared
 
     def close(self, print_func=print, *__):
-        """Close JupyterO2.
+        """Close JupyterRemote.
         Print messages if used in logging.DEBUG mode.
         :param print_func: the function to use to print, allows printing to be disabled if necessary,
         using `print_func=lambda x, end=None, flush=None: None`.
@@ -457,7 +457,7 @@ class JupyterO2(object):
             self._second_ssh.close(force=True)
 
     def term(self, *__):
-        """Terminate JupyterO2 and exit."""
+        """Terminate JupyterRemote and exit."""
         if not self.flag_exit:
             self.flag_exit = True
             try:
@@ -515,15 +515,15 @@ def main():
     if not pargs['subcommand']:
         default_jp_subcommand = config.get('Defaults', 'DEFAULT_JP_SUBCOMMAND')
         # # removed error message so that program will use the default subcommand
-        # JO2_ARG_PARSER.error("the following arguments are required: subcommand")
+        # JRMT_ARG_PARSER.error("the following arguments are required: subcommand")
         logger.warning("Jupyter subcommand not provided. Using default: {}".format(default_jp_subcommand))
         pargs['subcommand'] = default_jp_subcommand
 
-    # start Jupyter-O2
+    # start Jupyter-Remote
     print_pargs = {i: pargs[i] for i in pargs if i not in ["keepxquartz", "forcegetpass", "forwardx11trusted"]}
     logger.debug(
         "\n    ".join(
-            ["Running Jupyter-O2 with options:"] +
+            ["Running Jupyter-Remote with options:"] +
             [
                 " " * (max(map(len, print_pargs.keys())) - len(pair[0])) +
                 ": ".join(str(item) for item in pair)
@@ -533,9 +533,9 @@ def main():
         "\n"
     )
     try:
-        jupyter_o2_runner = JupyterO2(config, **pargs)
-        jupyter_o2_runner.run()
-    except JupyterO2Exception as err:
+        jupyter_rmt_runner = JupyterRemote(config, **pargs)
+        jupyter_rmt_runner.run()
+    except JupyterRemoteException as err:
         logger.error("{0}: {1}".format(err.__class__.__name__, err))
         return 1
 

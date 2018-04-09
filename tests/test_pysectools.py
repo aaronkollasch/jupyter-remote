@@ -8,7 +8,7 @@ try:
 except ImportError:
     from io import StringIO
 
-from jupyter_o2.pysectools import zero, cmd_exists, Pinentry
+from jupyter_remote.pysectools import zero, cmd_exists, Pinentry
 
 
 class MockStringIO(StringIO):
