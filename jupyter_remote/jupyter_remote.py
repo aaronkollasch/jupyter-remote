@@ -178,6 +178,7 @@ class JupyterRemote(object):
             keepxquartz=False,
             forcegetpass=JRMT_DEFAULTS.get("FORCE_GETPASS"),
             no_browser=False,
+            forwardx11=True,
             forwardx11trusted=False,
     ):
         self.logger = logging.getLogger(__name__)
@@ -247,10 +248,11 @@ class JupyterRemote(object):
         self._pinentry = Pinentry(pinentry_path=PINENTRY_PATH, fallback_to_getpass=True, force_getpass=forcegetpass)
 
         login_ssh_options = {
-            "ForwardX11": "yes",
             "LocalForward": "{} 127.0.0.1:{}".format(jp_port, jp_port),
             "PubkeyAuthentication": "no"
         }
+        if forwardx11:
+            login_ssh_options["ForwardX11"] = "yes"
         if forwardx11trusted:
             login_ssh_options["ForwardX11Trusted"] = "yes"
 

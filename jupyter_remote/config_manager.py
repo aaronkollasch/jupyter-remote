@@ -30,20 +30,23 @@ JRMT_DEFAULTS = {
     "INTERACTIVE_CALL_FORMAT": "srun -t {time} --mem {mem} -c {cores} --pty -p interactive --x11 /bin/bash",
     "PASSWORD_REQUEST_PATTERN": "[\w-]+@[\w-]+'s password:",
     "DNS_SERVER_GROUPS": DNS_SERVER_GROUPS,
+    "FORWARD_X11": True,
 }
 JRMT_DEFAULTS_STR = {key: str(value) for key, value in JRMT_DEFAULTS.items()}
 
 CFG_FILENAME = "jupyter-remote.cfg"
 CFG_DIR = "jupyter-remote"
 
-def _generate_search_locations(dir=CFG_DIR, filename=CFG_FILENAME):
+
+def _generate_search_locations(dirname=CFG_DIR, filename=CFG_FILENAME):
     return [                                                    # In order of increasing priority:
-        os.path.join("/etc", dir, filename),                    # /etc/jupyter-remote/jupyter-remote.cfg
-        os.path.join("/usr/local/etc", dir, filename),          # /usr/local/etc/jupyter-remote/jupyter-remote.cfg
-        os.path.join(sys.prefix, "etc", dir, filename),         # etc/jupyter-remote/jupyter-remote.cfg
+        os.path.join("/etc", dirname, filename),                    # /etc/jupyter-remote/jupyter-remote.cfg
+        os.path.join("/usr/local/etc", dirname, filename),          # /usr/local/etc/jupyter-remote/jupyter-remote.cfg
+        os.path.join(sys.prefix, "etc", dirname, filename),         # etc/jupyter-remote/jupyter-remote.cfg
         os.path.join(os.path.expanduser("~"), "." + filename),  # ~/.jupyter-remote.cfg
         filename,                                               # ./jupyter-remote.cfg
     ]
+
 
 CFG_SEARCH_LOCATIONS = _generate_search_locations()
 
@@ -110,6 +113,9 @@ def get_base_arg_parser():
                         help="use getpass instead of pinentry for password entry")
     parser.add_argument('--no-browser', dest="no_browser", action='store_true',
                         help="run without opening the browser")
+    parser.add_argument("-X", "--ForwardX11", dest="forwardx11", default=JRMT_DEFAULTS.get("FORWARD_X11"),
+                        action='store_true',
+                        help="enable X11 forwarding, equivalent to ssh -X")
     parser.add_argument("-Y", "--ForwardX11Trusted", dest="forwardx11trusted", default=False,
                         action='store_true',
                         help="enable trusted X11 forwarding, equivalent to ssh -Y")
@@ -152,5 +158,6 @@ class ConfigManager(object):
             jp_mem=self.config.get('Defaults', 'DEFAULT_JP_MEM'),
             jp_cores=self.config.getint('Defaults', 'DEFAULT_JP_CORES'),
             forcegetpass=self.config.getboolean('Settings', 'FORCE_GETPASS'),
+            forwardx11=self.config.get('Remote Environment Settings', 'FORWARD_X11')
         )
         return parser

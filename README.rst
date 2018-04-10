@@ -68,7 +68,3 @@ Requirements and compatibility
 Optional installs
 ------------------------------
 * pinentry (a command line tool used instead of getpass)
-
-TODOs
-------------------------------
-* add a use_x11 option to make X11 optional (unnecessary for some configurations)
