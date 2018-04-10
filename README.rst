@@ -39,13 +39,15 @@ Usage
 
     jupyter-remote [profile] [subcommand]
 
+Both arguments are optional.
+
 If Jupyter is installed on your machine, Jupyter-Remote can be run as a Jupyter subcommand:
 
 .. code-block:: console
 
-    jupyter remote [profile] [subcommand]
+    jupyter remote o2 lab
 
-Jupyter-Remote works great with `JupyterLab <https://github.com/jupyterlab/jupyterlab>`__!
+Be sure to try out `JupyterLab <https://github.com/jupyterlab/jupyterlab>`__!
 
 For more info on the Jupyter-Remote command-line options, use ``jupyter-remote --help``.
 

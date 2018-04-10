@@ -37,3 +37,4 @@ jupyter_o2.egg-info
 /ChangeLog
 /AUTHORS
 .coverage
+.coveragerc
