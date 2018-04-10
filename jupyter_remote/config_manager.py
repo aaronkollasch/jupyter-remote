@@ -28,7 +28,7 @@ JRMT_DEFAULTS = {
 
     "USE_INTERNAL_INTERACTIVE_SESSION": True,
     "INTERACTIVE_CALL_FORMAT": "srun -t {time} --mem {mem} -c {cores} --pty -p interactive --x11 /bin/bash",
-    "PASSWORD_REQUEST_PATTERN": "[\w-]+@[\w-]+'s password: ",
+    "PASSWORD_REQUEST_PATTERN": "[\w-]+@[\w-]+'s password:",
     "DNS_SERVER_GROUPS": DNS_SERVER_GROUPS,
 }
 JRMT_DEFAULTS_STR = {key: str(value) for key, value in JRMT_DEFAULTS.items()}
@@ -36,13 +36,16 @@ JRMT_DEFAULTS_STR = {key: str(value) for key, value in JRMT_DEFAULTS.items()}
 CFG_FILENAME = "jupyter-remote.cfg"
 CFG_DIR = "jupyter-remote"
 
-CFG_SEARCH_LOCATIONS = [                                        # In order of increasing priority:
-    os.path.join("/etc", CFG_DIR, CFG_FILENAME),                # /etc/jupyter-remote/jupyter-remote.cfg
-    os.path.join("/usr/local/etc", CFG_DIR, CFG_FILENAME),      # /usr/local/etc/jupyter-remote/jupyter-remote.cfg
-    os.path.join(sys.prefix, "etc", CFG_DIR, CFG_FILENAME),     # etc/jupyter-remote/jupyter-remote.cfg
-    os.path.join(os.path.expanduser("~"), "." + CFG_FILENAME),  # ~/.jupyter-remote.cfg
-    CFG_FILENAME,                                               # ./jupyter-remote.cfg
-]
+def _generate_search_locations(dir=CFG_DIR, filename=CFG_FILENAME):
+    return [                                                    # In order of increasing priority:
+        os.path.join("/etc", dir, filename),                    # /etc/jupyter-remote/jupyter-remote.cfg
+        os.path.join("/usr/local/etc", dir, filename),          # /usr/local/etc/jupyter-remote/jupyter-remote.cfg
+        os.path.join(sys.prefix, "etc", dir, filename),         # etc/jupyter-remote/jupyter-remote.cfg
+        os.path.join(os.path.expanduser("~"), "." + filename),  # ~/.jupyter-remote.cfg
+        filename,                                               # ./jupyter-remote.cfg
+    ]
+
+CFG_SEARCH_LOCATIONS = _generate_search_locations()
 
 
 def generate_config_file(config_dir=None):
@@ -80,6 +83,7 @@ def generate_config_file(config_dir=None):
 
 def get_base_arg_parser():
     parser = argparse.ArgumentParser(description='Launch and connect to a Jupyter session on a remote server')
+    parser.add_argument("profile", type=str, nargs='?', help="the config profile (optional)")
     parser.add_argument("subcommand", type=str, nargs='?', help="the subcommand to launch (optional)")
     parser.add_argument("-u", "--user", default=JRMT_DEFAULTS.get("DEFAULT_USER"), type=str,
                         help="your remote username")
@@ -127,6 +131,15 @@ class ConfigManager(object):
         self.config.add_section('Settings')
         self.config.add_section('Remote Environment Settings')
         self.cfg_locations = self.config.read(CFG_SEARCH_LOCATIONS)
+
+    def read_profile(self, profile):
+        if profile:
+            filename = CFG_FILENAME.split('.')[0] + "-" + profile + "." + CFG_FILENAME.split('.')[1]
+            new_locations = self.config.read(_generate_search_locations(filename=filename))
+            self.cfg_locations.extend(new_locations)
+            return new_locations
+        else:
+            return None
 
     def get_arg_parser(self):
         """Get an arg parser populated with this ConfigManager's defaults."""

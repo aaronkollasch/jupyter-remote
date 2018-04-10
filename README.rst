@@ -4,10 +4,10 @@ Jupyter-Remote
 
 `Jupyter-Remote <https://github.com/aaronkollasch/jupyter-remote>`_
 is a command-line tool that automatically runs Jupyter on a remote server.
-
-It aims to streamline remote Jupyter usage for a range of remote configurations, from
-simple servers to SLURM clusters that require request forwarding to a compute node.
 It is derived from `Jupyter-O2 <https://github.com/aaronkollasch/jupyter-o2>`_.
+
+Jupyter-Remote aims to streamline remote Jupyter usage for a range of remote configurations,
+from simple servers to SLURM clusters that require request forwarding to a compute node.
 
 Installation
 ------------------------------
@@ -37,17 +37,26 @@ Usage
 
 .. code-block:: console
 
-    jupyter-remote [subcommand]
+    jupyter-remote [profile] [subcommand]
 
 If Jupyter is installed on your machine, Jupyter-Remote can be run as a Jupyter subcommand:
 
 .. code-block:: console
 
-    jupyter remote lab
+    jupyter remote [profile] [subcommand]
 
 Jupyter-Remote works great with `JupyterLab <https://github.com/jupyterlab/jupyterlab>`__!
 
-For info on the Jupyter-Remote command-line options, use ``jupyter-remote --help``.
+For more info on the Jupyter-Remote command-line options, use ``jupyter-remote --help``.
+
+Profiles
+------------------------------
+Make a copy of ``jupyter-remote.cfg`` and name it ``jupyter-remote-[profile name].cfg``.
+See ``example_cfgs/jupyter-remote-o2.cfg``.
+
+Note: Both the profile and subcommand option are optional.
+If only one is provided, Jupyter-Remote will first look for a profile with that name,
+and if none is found, it will use the default profile with the given subcommand.
 
 Requirements and compatibility
 ------------------------------
@@ -62,5 +71,4 @@ Optional installs
 
 TODOs
 ------------------------------
-* shortcut for selectable server profiles and configurations
 * add a use_x11 option to make X11 optional (unnecessary for some configurations)

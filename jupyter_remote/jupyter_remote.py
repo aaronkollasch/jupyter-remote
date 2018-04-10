@@ -17,7 +17,8 @@ from pexpect import pxssh
 from .version import __version__
 from .utils import (join_cmd, check_dns, try_quit_xquartz, check_port_occupied)
 from .pysectools import (zero, Pinentry, PINENTRY_PATH)
-from .config_manager import (JRMT_DEFAULTS, CFG_SEARCH_LOCATIONS, generate_config_file, ConfigManager)
+from .config_manager import (JRMT_DEFAULTS, CFG_SEARCH_LOCATIONS,
+                             generate_config_file, get_base_arg_parser, ConfigManager)
 
 JP_SITE_PATTERN_FORMAT = "\s(https?://((localhost)|(127\.0\.0\.1)):{port}[\w\-./%?=]+)\s"
 
@@ -131,6 +132,7 @@ class FilteredOut(object):
         self.reactions = reactions
 
     def write(self, bytestr):
+        # TODO: split bytestr by lines first, and only print lines starting with self.by
         try:
             if isinstance(self.by, list) and any(by in bytestr for by in self.by):
                 self.txtctrl.write(bytestr)
@@ -475,11 +477,21 @@ def main():
     # load the config file
     config_mgr = ConfigManager()
     cfg_locations = config_mgr.cfg_locations
-    config = config_mgr.config
 
-    # parse the command line arguments
-    pargs = config_mgr.get_arg_parser().parse_args()
-    pargs = vars(pargs)
+    # get the server profile
+    pargs = vars(get_base_arg_parser().parse_args())
+    profile = pargs.get("profile", None)
+    subcommand = None
+    if profile:
+        read_profile = config_mgr.read_profile(profile)
+        if not read_profile:
+            subcommand = profile
+
+    # parse the command line arguments, incorporating the complete set of defaults
+    pargs = vars(config_mgr.get_arg_parser().parse_args())
+    pargs.pop('profile')
+    if subcommand is not None:
+        pargs['subcommand'] = subcommand
 
     # print the current version and exit
     if pargs.pop('version'):
@@ -513,7 +525,7 @@ def main():
                      .format('\n'.join(cfg_locations[::-1])))
 
     if not pargs['subcommand']:
-        default_jp_subcommand = config.get('Defaults', 'DEFAULT_JP_SUBCOMMAND')
+        default_jp_subcommand = config_mgr.config.get('Defaults', 'DEFAULT_JP_SUBCOMMAND')
         # # removed error message so that program will use the default subcommand
         # JRMT_ARG_PARSER.error("the following arguments are required: subcommand")
         logger.warning("Jupyter subcommand not provided. Using default: {}".format(default_jp_subcommand))
@@ -533,7 +545,7 @@ def main():
         "\n"
     )
     try:
-        jupyter_rmt_runner = JupyterRemote(config, **pargs)
+        jupyter_rmt_runner = JupyterRemote(config_mgr.config, **pargs)
         jupyter_rmt_runner.run()
     except JupyterRemoteException as err:
         logger.error("{0}: {1}".format(err.__class__.__name__, err))
