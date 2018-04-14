@@ -102,6 +102,7 @@ class CustomSSH(pxssh.pxssh):
         """
         before, match, after = self.before, self.match, self.after
         self.sendlineprompt("echo $?", silence=True)
+        # TODO: use regex instead of splitting
         exit_code = int(self.before.split(b'\n')[1].strip())
         self.before, self.match, self.after = before, match, after
         return exit_code
@@ -487,6 +488,7 @@ def main():
     if profile:
         read_profile = config_mgr.read_profile(profile)
         if not read_profile:
+            # no config files found for this profile, so use it as a subcommand
             subcommand = profile
 
     # parse the command line arguments, incorporating the complete set of defaults
