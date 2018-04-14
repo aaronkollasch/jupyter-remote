@@ -64,7 +64,7 @@ Requirements and compatibility
 ------------------------------
 * python 2.7 or 3.6
 * pexpect.pxssh
-* POSIX: Jupyter-Remote has been tested on MacOS. It may work on Linux, and on Windows it will
+* POSIX: Jupyter-Remote has been tested on MacOS and Linux, while on Windows it will
   require Cygwin and Cygwin's version of Python.
 
 Optional installs
