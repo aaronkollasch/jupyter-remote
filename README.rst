@@ -66,7 +66,4 @@ Requirements and compatibility
 * pexpect.pxssh
 * POSIX: Jupyter-Remote has been tested on MacOS and Linux, while on Windows it will
   require Cygwin and Cygwin's version of Python.
-
-Optional installs
-------------------------------
-* pinentry (a command line tool used instead of getpass)
+* pinentry (suggested)
