@@ -29,7 +29,9 @@ JRMT_DEFAULTS = {
     "USE_INTERNAL_INTERACTIVE_SESSION": True,
     "INTERACTIVE_CALL_FORMAT": "srun -t {time} --mem {mem} -c {cores} --pty -p interactive --x11 /bin/bash",
     "START_INTERACTIVE_SESSION_TIMEOUT": -1,
-    "PASSWORD_REQUEST_PATTERN": "[\w-]+@[\w-]+'s password:",
+    "INTERACTIVE_REQUIRES_PASSWORD": False,
+    "INTERNAL_SSH_REQUIRES_PASSWORD": False,
+    "PASSWORD_REQUEST_PATTERN": "[\w-]+@[\w-]+'s password: ",
     "DNS_SERVER_GROUPS": DNS_SERVER_GROUPS,
     "FORWARD_X11": True,
 }

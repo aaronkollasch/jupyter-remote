@@ -58,7 +58,7 @@ class CustomSSH(pxssh.pxssh):
         return logfile, logfile_read, logfile_send
 
     def sendline(self, s='', silence=True):
-        """Send s, and log to logger.debug() if silence == False"""
+        """Send s, and log s to logger.debug() if silence == False"""
         if not silence:
             logger = logging.getLogger(__name__)
             logger.debug("SEND: {}".format(s))
@@ -201,9 +201,13 @@ class JupyterRemote(object):
         init_jupyter_commands = config.get('Settings', 'INIT_JUPYTER_COMMANDS')
         jp_call_format = config.get('Settings', 'RUN_JUPYTER_CALL_FORMAT')
 
+        self.run_internal_session = config.getboolean('Remote Environment Settings', 'USE_INTERNAL_INTERACTIVE_SESSION')
         srun_call_format = config.get('Remote Environment Settings', 'INTERACTIVE_CALL_FORMAT')
         self.srun_timeout = config.get('Remote Environment Settings', 'START_INTERACTIVE_SESSION_TIMEOUT')
+        self.srun_usepass = config.getboolean('Remote Environment Settings', 'INTERACTIVE_REQUIRES_PASSWORD')
+        self.internal_ssh_usepass = config.getboolean('Remote Environment Settings', 'INTERNAL_SSH_REQUIRES_PASSWORD')
         password_request_pattern = config.get('Remote Environment Settings', 'PASSWORD_REQUEST_PATTERN')
+        self.password_request_pattern = re.compile(password_request_pattern.encode('utf-8'))
 
         # find an open port starting with the supplied port
         success = False
@@ -222,7 +226,6 @@ class JupyterRemote(object):
             raise JupyterRemoteError("Could not find an available port.")
         self.logger.debug("")
 
-        self.run_internal_session = config.getboolean('Remote Environment Settings', 'USE_INTERNAL_INTERACTIVE_SESSION')
         self.srun_call = srun_call_format.format(
             time=quote(jp_time),
             mem=quote(jp_mem),
@@ -237,6 +240,12 @@ class JupyterRemote(object):
                 self.srun_timeout = -1
         if self.run_internal_session:
             self.logger.debug("Will start internal interactive session with command:\n    {}".format(self.srun_call))
+            self.logger.debug(
+                "Will {} password when starting interactive session\n"
+                "Will {} password with ssh-ing into interactive session\n".format(
+                    "send" if self.srun_usepass else "not send",
+                    "send" if self.internal_ssh_usepass else "not send"
+                ))
 
         self.init_jupyter_commands = []
         if module_load_call:
@@ -254,8 +263,6 @@ class JupyterRemote(object):
             port=self.jp_port
         )
         self.logger.debug("Will run Jupyter with command:\n    {}\n".format(self.jp_call))
-
-        self.password_request_pattern = re.compile(password_request_pattern.encode('utf-8'))
 
         self.__pass = ""
         self._pinentry = Pinentry(pinentry_path=PINENTRY_PATH, fallback_to_getpass=True, force_getpass=forcegetpass)
@@ -380,22 +387,35 @@ class JupyterRemote(object):
 
         return jp_site
 
-    def start_interactive_session(self, s):
+    def start_interactive_session(self, s, sendpass=False):
         """Start an interactive session in the given CustomSSH instance
+
         :param s: an active CustomSSH
+        :param sendpass: when connecting, wait for password request and then send password
         :return: the name of the interactive node, or False on failure
         """
         # enter an interactive session
         self.logger.info("Starting an interactive session.")
-        s.PROMPT = self.password_request_pattern
-        s.logfile_read = FilteredOut(  # TODO: recognize more errors, e.g. srun: error:
-            STDOUT_BUFFER, [b'srun:', b'authenticity'], reactions={b'authenticity': self.close_on_known_hosts_error}
-        )
-        if not s.sendlineprompt(self.srun_call, silence=False, timeout=self.srun_timeout)[1]:
-            timeout = s.timeout if self.srun_timeout == -1 else self.srun_timeout
-            self.logger.error("The timeout ({}) was reached without receiving a password request.".format(timeout))
-            return False
-        s.sendpass(self.__pass)
+        if self.logger.isEnabledFor(logging.DEBUG):
+            s.logfile_read = STDOUT_BUFFER
+        else:
+            s.logfile_read = FilteredOut(
+                STDOUT_BUFFER, [b'srun:', b'authenticity'], reactions={b'authenticity': self.close_on_known_hosts_error}
+            )
+
+        timeout = s.timeout if self.srun_timeout == -1 else self.srun_timeout
+        if sendpass:
+            s.PROMPT = self.password_request_pattern
+            if not s.sendlineprompt(self.srun_call, silence=False, timeout=self.srun_timeout)[1]:
+                self.logger.error("The timeout ({}) was reached without receiving a password request.".format(timeout))
+                return False
+            s.sendpass(self.__pass)  # automatically silences all logfiles in s
+        else:
+            s.PROMPT = "\$"
+            if not s.sendlineprompt(self.srun_call, silence=False, timeout=self.srun_timeout)[1]:
+                self.logger.error("The timeout ({}) was reached without receiving a prompt.".format(timeout))
+                return False
+            s.logfile_read = None
 
         # within interactive session: get the name of the interactive node
         s.PROMPT = s.UNIQUE_PROMPT
@@ -412,21 +432,28 @@ class JupyterRemote(object):
                              "If on O2, check with HMS RC.")
         self.term()
     
-    def ssh_into_interactive_node(self, s, interactive_host):
+    def ssh_into_interactive_node(self, s, interactive_host, sendpass=False):
         """SSH into an interactive node from within the server and forward its connection
+
         :param s: an active CustomSSH
         :param interactive_host: the name of the interactive node
+        :param sendpass: when connecting, wait for password request and then send password
         :return: True if the connection is successful
         """
         self.logger.info("Connecting to the interactive node.")
         jp_interactive_command = "ssh -N -L {0}:127.0.0.1:{0} {1}".format(self.jp_port, interactive_host)
-        prompt = s.PROMPT
-        s.PROMPT = self.password_request_pattern
-        if not s.sendlineprompt(jp_interactive_command, silence=False)[1]:
-            self.logger.error("The timeout ({}) was reached.".format(s.timeout))
-            return False
-        s.PROMPT = prompt
-        s.sendpass(self.__pass)
+
+        if sendpass:
+            prompt = s.PROMPT
+            s.PROMPT = self.password_request_pattern
+            if not s.sendlineprompt(jp_interactive_command, silence=False)[1]:
+                self.logger.error("The timeout ({}) was reached.".format(s.timeout))
+                return False
+            s.PROMPT = prompt
+            s.sendpass(self.__pass)
+        else:
+            s.sendline(jp_interactive_command, silence=False)
+
         self.logger.debug("Connected.")
         return True
 

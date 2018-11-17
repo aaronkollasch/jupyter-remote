@@ -22,8 +22,8 @@ If Jupyter-Remote is run Jupyter on a SLURM interactive node, bash notebooks
 can be used to document your session, including commands and
 outputs, without using SLURM to submit additional jobs.
 
-``%%bash`` can be used to run a ``bash`` command in kernels that support
-it, but it does not remember your working directory or other variables
+``%%bash`` can be used to run a ``bash`` command in the default kernel,
+but it does not remember your working directory or other variables
 from previous cells.
 
 Just be sure that your node has sufficient memory for the desired tasks,
@@ -50,7 +50,7 @@ For example, the connection could time out or the node could exceed its time lim
 `JupyterLab <https://github.com/jupyterlab/jupyterlab>`__
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-While JupyterLab is currently in beta, it is now
+JupyterLab is now
 `ready for users <https://blog.jupyter.org/jupyterlab-is-ready-for-users-5a6f039b8906>`__.
 
 JupyterLab offers a more complete environment than Jupyter Notebook.
@@ -73,7 +73,7 @@ If not, you may also copy ``jupyter_remote/jupyter-remote.cfg`` into any locatio
 nbsignatures.db
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If jupyter hangs when opening notebooks for the first time in any
+If Jupyter hangs when opening notebooks for the first time in any
 session, and the console shows error messages such as:
 
 .. code-block::
