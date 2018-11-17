@@ -65,9 +65,9 @@ class CustomSSH(pxssh.pxssh):
         return super(CustomSSH, self).sendline(s)
 
     def sendlineprompt(self, s='', timeout=-1, silence=True, check_exit_status=False):
-        """Send s with sendline and then prompt() once.
+        """Send s with sendline() and then prompt() once.
         :param s: the string to send
-        :param timeout: number of seconds to wait for prompt; use default if -1
+        :param timeout: number of seconds to wait for prompt; use default if -1; no timeout if None
         :param silence: silence printing of s to debug log
         :param check_exit_status: check the exit status and print a warning if the command exited with an error
         :return: output of sendline(), output of prompt()
@@ -102,7 +102,7 @@ class CustomSSH(pxssh.pxssh):
         """
         before, match, after = self.before, self.match, self.after
         self.sendlineprompt("echo $?", silence=True)
-        # TODO: use regex instead of splitting
+        # TODO: use regex to find the exit code instead of splitting
         exit_code = int(self.before.split(b'\n')[1].strip())
         self.before, self.match, self.after = before, match, after
         return exit_code
@@ -134,6 +134,8 @@ class FilteredOut(object):
 
     def write(self, bytestr):
         # TODO: split bytestr by lines first, and only print lines starting with self.by
+        # to prevent inadvertent printing of password prompts or other unwanted lines
+        # (the password itself shouldn't go through this function anyway so it is mostly a cosmetic issue)
         try:
             if isinstance(self.by, list) and any(by in bytestr for by in self.by):
                 self.txtctrl.write(bytestr)
@@ -200,6 +202,7 @@ class JupyterRemote(object):
         jp_call_format = config.get('Settings', 'RUN_JUPYTER_CALL_FORMAT')
 
         srun_call_format = config.get('Remote Environment Settings', 'INTERACTIVE_CALL_FORMAT')
+        self.srun_timeout = config.get('Remote Environment Settings', 'START_INTERACTIVE_SESSION_TIMEOUT')
         password_request_pattern = config.get('Remote Environment Settings', 'PASSWORD_REQUEST_PATTERN')
 
         # find an open port starting with the supplied port
@@ -225,6 +228,13 @@ class JupyterRemote(object):
             mem=quote(jp_mem),
             cores=jp_cores
         )
+        try:
+            self.srun_timeout = int(self.srun_timeout)
+        except (ValueError, TypeError):
+            if self.srun_timeout in ["None", "inf"]:
+                self.srun_timeout = None
+            else:
+                self.srun_timeout = -1
         if self.run_internal_session:
             self.logger.debug("Will start internal interactive session with command:\n    {}".format(self.srun_call))
 
@@ -378,11 +388,12 @@ class JupyterRemote(object):
         # enter an interactive session
         self.logger.info("Starting an interactive session.")
         s.PROMPT = self.password_request_pattern
-        s.logfile_read = FilteredOut(
+        s.logfile_read = FilteredOut(  # TODO: recognize more errors, e.g. srun: error:
             STDOUT_BUFFER, [b'srun:', b'authenticity'], reactions={b'authenticity': self.close_on_known_hosts_error}
         )
-        if not s.sendlineprompt(self.srun_call, silence=False)[1]:
-            self.logger.error("The timeout ({}) was reached without receiving a password request.".format(s.timeout))
+        if not s.sendlineprompt(self.srun_call, silence=False, timeout=self.srun_timeout)[1]:
+            timeout = s.timeout if self.srun_timeout == -1 else self.srun_timeout
+            self.logger.error("The timeout ({}) was reached without receiving a password request.".format(timeout))
             return False
         s.sendpass(self.__pass)
 
